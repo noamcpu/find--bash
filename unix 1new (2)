@@ -1,0 +1,161 @@
+#!/bin/bash
+# author : Noam Itzahk
+#global path
+path=$1
+
+for i in $#
+do
+
+   case $2 in
+        -type) flag=$3;;
+
+   esac
+
+
+case $4 in
+    -type) flag=$5;;
+    -name) name=$5;;
+    -size) size=$5;;
+esac
+
+case $6 in
+   -name) name=$7;;
+   -size) size=$7;;
+   -exec) cmd=$7;;
+esac
+
+if  [  -maxdepth  == $2 ]
+then
+   cmd=$9
+   maxIndex=1
+fi
+
+
+
+#exec
+execIndex=0
+
+  if [[ $6 == -exec ||  $8 == -exec ]]
+  then
+      execIndex=1
+      if [ $6 == -exec ]
+then
+execArg=$7
+
+      else
+          execArg=$9
+
+      fi
+  fi
+
+
+done
+
+flag_name=0
+flag_size=0
+
+
+case $4 in
+  -size) flag_size=1;;
+  -name) flag_name=1;;
+esac
+
+case $6 in
+  -size) flag_size=1;;
+  -name) flag_name=1;;
+esac
+
+#searching by name
+
+name_s(){
+#pass on all names and search for match
+ for i in $name
+ do
+# for regular experssions
+ result=$( basename $1 suffix )
+ if [ "$result" == $i ]
+ then
+#printing to screen
+  if [ -f $1 ]
+  then
+   echo "$1 is a file"
+  else
+   echo "$1 is a directory"
+ fi
+fi
+done
+}
+
+# searching  by size
+
+size_s(){
+# comapre to size
+b_size=$( du -b $1 | awk '{print $1 }')
+if [[ $b_size -lt $size ]]
+then
+
+#printing to screen
+  if [ -f $1 ]
+  then
+   echo "$1 is a file"
+  else
+   echo "$1 is a directory"
+ fi
+fi
+
+}
+
+#search function
+search() {
+
+#recursively pass over all the files and examine
+     for f in `ls $1`; do
+        fullpath=$1/$f
+        if [[ -d $fullpath ]]; then
+            if [[ $flag == "d" ]]; then
+                if [ $flag_size  == 1 ]
+                then
+                     size_s $fullpath
+                else
+                    name_s $fullpath
+                fi
+            fi
+
+            if [[  $2 == "" ]]; then
+               search $fullpath
+            elif [[ $2 -gt 1 ]]; then
+                search $fullpath $(($2-1))
+            fi
+        elif [[ -f $fullpath ]]; then
+            if [[ $flag == "f" ]]; then
+                    if [ $flag_size  == 1 ]
+                then
+                     size_s $fullpath
+                else
+                    name_s $fullpath
+                fi
+
+            fi
+        fi
+    done
+}
+
+search $path $maxdepth
+
+execute(){
+#implement exec
+#to check when exec start
+echo "output of execute"
+resultOfSearching=$(search $path $maxdepth )
+for results in $resultOfSearching
+do
+     $execArg $results
+
+done
+
+}
+
+if [ $execIndex == 1 ]
+then
+  execute
+fi
